@@ -60,6 +60,48 @@ contract('SingleBet', function (accounts) {
         // assert
         assert.equal(false, data[0], "Bet is open");
       });
+
+      it("should get paid 10% of losings when Oracle", async function () {
+        // arrange
+        let startBalance = web3.eth.getBalance(initialParams._oracle).toString();
+
+        // act
+        await instance.bet(1, {
+          from: accounts[5],
+          value: web3.toWei(2, 'ether')
+        })
+        await instance.bet(2, {
+          from: accounts[6],
+          value: web3.toWei(1, 'ether')
+        })
+        await instance.bet(3, {
+          from: accounts[6],
+          value: web3.toWei(1, 'ether')
+        })
+        await instance.settleBet(1, {
+          from: initialParams._oracle
+        });
+
+        // assert
+        let endBalance = web3.eth.getBalance(initialParams._oracle).toString();
+        let diff = web3.fromWei(endBalance, 'ether') - web3.fromWei(startBalance, 'ether');
+        assert.isAbove(diff, 0.19);
+      });
+
+      it("should get paid 10% of losings when Oracle no betters", async function () {
+        // arrange
+        let startBalance = web3.eth.getBalance(initialParams._oracle).toString();
+
+        // act
+        await instance.settleBet(1, {
+          from: initialParams._oracle
+        });
+
+        // assert
+        let endBalance = web3.eth.getBalance(initialParams._oracle).toString();
+        let diff = web3.fromWei(endBalance, 'ether') - web3.fromWei(startBalance, 'ether');
+        assert.isBelow(diff, 0); // gas money
+      });
     });
 
     describe("triggerPayout", () => {
@@ -216,7 +258,7 @@ contract('SingleBet', function (accounts) {
 
         // act
         try {
-          await instance.isNotOver(4);
+          await instance.bet(4);
         } catch (ex) {
           assert.isNotNull(ex);
         }
@@ -229,11 +271,85 @@ contract('SingleBet', function (accounts) {
     describe("getPossibleWinnig", () => {
       it("should get possible winning", async function () {
         // arrange
+        let amount = web3.toWei(9, 'ether');
 
         // act
+        await instance.bet(1, {
+          from: accounts[7],
+          value: web3.toWei(0.5, 'ether')
+        })
+        await instance.bet(2, {
+          from: accounts[8],
+          value: web3.toWei(0.5, 'ether')
+        })
+        await instance.bet(3, {
+          from: accounts[9],
+          value: web3.toWei(1, 'ether')
+        })
+
+        let winnings = await instance.getPossibleWinnig.call(3, amount);
 
         // assert
-        assert.fail();
+        // price 1 ether, 10% for Oracle => 0.9, winners 1 + 9 ether => 90% for current amount
+        assert.equal(web3.fromWei(winnings.toString(), 'ether'), 0.81);
+      });
+
+      it("should get possible winning 2", async function () {
+        // arrange
+        let amount = web3.toWei(1, 'ether');
+
+        // act
+        await instance.bet(1, {
+          from: accounts[7],
+          value: web3.toWei(0.2, 'ether')
+        })
+        await instance.bet(2, {
+          from: accounts[8],
+          value: web3.toWei(0.0001, 'ether')
+        })
+        await instance.bet(2, {
+          from: accounts[6],
+          value: web3.toWei(0.002, 'ether')
+        })
+        await instance.bet(3, {
+          from: accounts[9],
+          value: web3.toWei(0.05, 'ether')
+        })
+
+        let winnings = await instance.getPossibleWinnig.call(1, amount);
+
+        // assert
+        // price 0.0521 ether, 10% for Oracle => 0.00521, winners 1 + 0.2 ether => 83.33% for current amount
+        assert.equal(web3.fromWei(winnings.toString(), 'ether'), 0.039073437);
+      });
+
+      it("should get possible winning 3", async function () {
+        // arrange
+        let amount = web3.toWei(0.5, 'Gwei');
+
+        // act
+        await instance.bet(1, {
+          from: accounts[7],
+          value: web3.toWei(0.2, 'Szabo')
+        })
+        await instance.bet(2, {
+          from: accounts[8],
+          value: web3.toWei(1, 'Gwei')
+        })
+        await instance.bet(2, {
+          from: accounts[6],
+          value: web3.toWei(2, 'Gwei')
+        })
+        await instance.bet(3, {
+          from: accounts[9],
+          value: web3.toWei(0.05, 'Szabo')
+        })
+
+        let winnings = await instance.getPossibleWinnig(2, amount);
+
+        // assert
+        // price 250000000000 wei, 10% for Oracle => 25000000000, winners 3500000000 wei => 14.28% for current amount
+        assert.equal(winnings.toString(), 32130000000);
       });
     });
 
@@ -267,7 +383,17 @@ contract('SingleBet', function (accounts) {
         assert.fail();
       });
     });
-    describe("cancleEvent", () => {
+    describe("cancelEvent", () => {
+      it("should TODO", async function () {
+        // arrange
+
+        // act
+
+        // assert
+        assert.fail();
+      });
+    });
+    describe("triggerPayout", () => {
       it("should TODO", async function () {
         // arrange
 

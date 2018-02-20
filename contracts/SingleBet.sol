@@ -22,6 +22,7 @@ contract SingleBet {
     * @param choice => address => amount
     */
     mapping (uint8=>mapping (address=>uint)) bets;
+    mapping (uint8=>uint) totalBetsAmount;
 
     modifier isOwner() {
         require(owner == msg.sender);
@@ -64,19 +65,31 @@ contract SingleBet {
     }
 
     /**
-    * @dev Oracle settles the bet.
+    * @dev Oracle settles the bet. Recieves 10% of losing money
+    * as reward for giving the result.
     * @param _winner 1 - home team, 2 - away team, 3 - draw
     */
     function settleBet(uint8 _winner) public {
         require(msg.sender == oracle);
-        Settle(_winner);
         isOpen = false;
         winner = _winner;
+        Settle(_winner);
+        
+        uint8 loser1;
+        uint8 loser2;
+        (loser1, loser2) = getLosers(_winner);
+
+        uint reward1 = totalBetsAmount[loser1] / 10;
+        totalBetsAmount[loser1] -= reward1;
+        uint reward2 = totalBetsAmount[loser2] / 10;
+        totalBetsAmount[loser2] -= reward2;
+
+        msg.sender.transfer(reward1 + reward2);
     }
 
     // TODO
     function triggerPayout() isOwner isSettled public view {
-        // TODO payout
+        
     }
 
     /**
@@ -84,8 +97,11 @@ contract SingleBet {
     * @param choice 1 - home team, 2 - away team, 3 - draw
     */
     function bet(uint8 choice) isNotOver isValidChoice(choice) public payable {
+        // TODO restrict because of 10 ** 5 in percentage
         require(bets[choice][msg.sender] + msg.value > bets[choice][msg.sender]);
+        require(totalBetsAmount[choice] + msg.value > totalBetsAmount[choice]);
         bets[choice][msg.sender] += msg.value;
+        totalBetsAmount[choice] += msg.value;
         Bet(choice, msg.sender, msg.value);
     }
 
@@ -102,9 +118,15 @@ contract SingleBet {
        return this.balance; 
     }
 
-    // TODO
-    function getPossibleWinnig() public pure returns(uint) {
-        return 0;
+    function getPossibleWinnig(uint8 choice, uint amount) isValidChoice(choice) public view returns(uint) {
+        uint8 loser1;
+        uint8 loser2;
+        (loser1, loser2) = getLosers(choice);
+        uint winnings = totalBetsAmount[choice] + amount;
+        uint percentageOfWins = getPercent(amount, winnings);
+        uint losings = totalBetsAmount[loser1] + totalBetsAmount[loser2];
+        uint afterOracle = (losings - (losings / 10));
+        return (afterOracle * percentageOfWins) / 10 ** 4;
     }
 
     // TODO
@@ -125,5 +147,32 @@ contract SingleBet {
     // TODO
     function cancelEvent() public pure {
 
+    }
+    
+    function getLosers(uint8 _winner) private view returns(uint8, uint8) {
+        if (_winner == choiceHome) {
+            return (choiceAway, choiceDraw);
+        }
+
+        if (_winner == choiceAway) {
+            return (choiceHome, choiceDraw);
+        }
+
+        if (_winner == 3) {
+            return (choiceHome, choiceAway);
+        }
+    }
+
+    /**
+    * @dev Get percentage, rouding down after 2nd decimal point
+    * https://stackoverflow.com/questions/42738640/division-in-ethereum-solidity/42739843
+    * @param numerator number to be divided
+    * @param denominator number dividing
+    * @return integer, percentage is 8773 => 87.73% 
+    */
+    function getPercent(uint numerator, uint denominator) private pure returns(uint) {
+        uint _numerator = numerator * 10 ** (5);
+        uint _quotient = ((_numerator / denominator)) / 10;
+        return _quotient;
     }
 }
