@@ -62,9 +62,16 @@ contract('SingleBet', function (accounts) {
       });
     });
 
-    it("should payout when Oracle", async function () {
-      assert.fail();
-    });
+    describe("triggerPayout", () => {
+      it("should Todo", async function () {
+        // arrange
+
+        // act
+
+        // assert
+
+      })
+    })
 
     describe("getWinner", () => {
       it("should return error when NOT settled", async function () {
@@ -120,41 +127,88 @@ contract('SingleBet', function (accounts) {
         assert.ok(true);
       });
 
-      it("should accept bet when open choice 1", async function () {
+      let choiceTests = [
+        { choice: 1, bet: 2 },
+        { choice: 2, bet: 5 },
+        { choice: 3, bet: 1 }
+      ];
+
+      choiceTests.forEach(async function (test) {
+        it("should accept bet when open choice " + test.choice, async function () {
+          // arrange
+          let betChoice = test.choice;
+          let betEthers = test.bet;
+          let betAmount = web3.toWei(betEthers, 'ether');
+          let acc = accounts[4];
+
+          // act
+          await instance.bet(betChoice, {
+            from: acc,
+            value: betAmount
+          })
+
+          // assert 
+          let money = await instance.checkTotalBalance();
+          let moneyEthers = web3.fromWei(money, 'ether').c;
+          assert.equal(moneyEthers, betEthers)
+
+          let placedBets = await instance.getBets(acc);
+          let placedMoney = placedBets[betChoice - 1]; // 0 based array
+          let placedMoneyEthers = web3.fromWei(placedMoney, "ether").c;
+          assert.equal(placedMoneyEthers, betEthers);
+        });
+      });
+      it("should accept multiple bets", async function () {
         // arrange
-        let betAmount = web3.toWei(2, 'ether');
-        let acc = accounts[4];
+        let acc = accounts[5];
+
+        let choices = [1, 1, 3, 2, 1]
+        let bets = [1, 2, 3, 2, 5]
+        let totalByChoice = [8, 2, 3];
+
+        // act
+        for (let i = 0; i < bets.length; i++) {
+          let betChoice = choices[i];
+          let betAmount = web3.toWei(bets[i], 'ether');
+          await instance.bet(betChoice, {
+            from: acc,
+            value: betAmount
+          })
+        }
+
+        // assert 
+        let money = await instance.checkTotalBalance();
+        let moneyEthers = web3.fromWei(money, 'ether').c;
+        assert.equal(moneyEthers, bets.reduce((a, b) => a + b, 0));
+
+        let placedBets = await instance.getBets(acc);
+        [1, 2, 3].forEach(function (choice) {
+          let placedMoney = placedBets[choice - 1]; // 0 based array
+          let placedMoneyEthers = web3.fromWei(placedMoney, "ether").c;
+          assert.equal(placedMoneyEthers, totalByChoice[choice - 1]); // 0 based array
+        })
+      });
+
+      it("should accept multiple bets when different accounts", async function () {
+        // arrange
+        let betAmount1 = web3.toWei(1, 'ether');
+        let betAmount2 = web3.toWei(2, 'ether');
+
         // act
         await instance.bet(1, {
-          from: acc,
-          value: betAmount
+          from: accounts[4],
+          value: betAmount1
+        })
+
+        await instance.bet(2, {
+          from: accounts[5],
+          value: betAmount2
         })
 
         // assert 
         let money = await instance.checkTotalBalance();
-        console.log(betAmount);
-        console.log(money);
-        let placedBets = await instance.getBets(acc);
-        console.log(placedBets);
-        assert.fail();
-      });
-
-      it("should accept bet when open choice 2", async function () {
-        // arrange
-
-        // act
-
-        // assert 
-        assert.fail();
-      });
-
-      it("should accept bet when open multiple bets", async function () {
-        // arrange
-
-        // act
-
-        // assert 
-        assert.fail();
+        let moneyEthers = web3.fromWei(money, 'ether').c;
+        assert.equal(3, moneyEthers)
       });
 
       it("should return error when invalid choice", async function () {
@@ -171,6 +225,7 @@ contract('SingleBet', function (accounts) {
         assert.ok(true);
       });
     });
+
     describe("getPossibleWinnig", () => {
       it("should get possible winning", async function () {
         // arrange
@@ -181,6 +236,7 @@ contract('SingleBet', function (accounts) {
         assert.fail();
       });
     });
+
     describe("manualGetWinnigs", () => {
       it("should TODO", async function () {
         // arrange

@@ -23,6 +23,11 @@ contract SingleBet {
     */
     mapping (uint8=>mapping (address=>uint)) bets;
 
+    modifier isOwner() {
+        require(owner == msg.sender);
+        _;
+    }
+
     modifier isSettled() {
         require(isOpen == false);
         _;
@@ -30,6 +35,11 @@ contract SingleBet {
 
     modifier isNotOver() {
         require(isOpen == true);
+        _;
+    }
+
+    modifier isValidChoice(uint8 choice) {
+        require(choice == choiceHome || choice == choiceAway || choice == choiceDraw);
         _;
     }
 
@@ -62,7 +72,10 @@ contract SingleBet {
         Settle(_winner);
         isOpen = false;
         winner = _winner;
+    }
 
+    // TODO
+    function triggerPayout() isOwner isSettled public view {
         // TODO payout
     }
 
@@ -70,10 +83,10 @@ contract SingleBet {
     * @dev Place bet on open event.
     * @param choice 1 - home team, 2 - away team, 3 - draw
     */
-    function bet(uint8 choice) isNotOver public payable {
-        require(choice == choiceHome || choice == choiceAway || choice == choiceDraw);
+    function bet(uint8 choice) isNotOver isValidChoice(choice) public payable {
+        require(bets[choice][msg.sender] + msg.value > bets[choice][msg.sender]);
+        bets[choice][msg.sender] += msg.value;
         Bet(choice, msg.sender, msg.value);
-        // todo require for overflow + tests
     }
 
     /**
@@ -82,7 +95,7 @@ contract SingleBet {
     * @return (home team bet amount, away team bet amount, draw bet amount)
     */
     function getBets(address addr) public view returns(uint, uint, uint) {
-        return (bets[choiceDraw][addr], bets[choiceDraw][addr], bets[choiceDraw][addr]);
+        return (bets[choiceHome][addr], bets[choiceAway][addr], bets[choiceDraw][addr]);
     }
 
     function checkTotalBalance() public view returns(uint) {
@@ -110,7 +123,7 @@ contract SingleBet {
     }
 
     // TODO
-    function cancleEvent() public pure {
+    function cancelEvent() public pure {
 
     }
 }
