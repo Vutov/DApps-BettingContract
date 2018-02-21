@@ -3,6 +3,7 @@ pragma solidity ^0.4.17;
 contract SingleBet {
     address private owner;
     address private oracle;
+    uint expiration;
 
     bool private isOpen;
     uint8 private winner;
@@ -23,6 +24,7 @@ contract SingleBet {
     */
     mapping (uint8=>mapping (address=>uint)) bets;
     mapping (uint8=>uint) totalBetsAmount;
+    mapping (address=>bool) payedCustomers;
 
     modifier isOwner() {
         require(owner == msg.sender);
@@ -46,6 +48,7 @@ contract SingleBet {
 
     event Settle(uint8 wnr);
     event Bet(uint8 choice, address addr, uint256 amount);
+    event CollectWinnigs(address addr, uint initalBet, uint totalWinnigs);
 
     function SingleBet(address _oracle, string _homeTeamName, string _awayTeamName) public {
         owner = msg.sender;
@@ -53,11 +56,11 @@ contract SingleBet {
         homeTeamName = _homeTeamName;
         awayTeamName = _awayTeamName;
         isOpen = true;
-        // TODO time close bets?
+        expiration = now + 1 weeks;
     }
 
-    function getBetMetaInfo() public view returns(bool, string, string) {
-        return (isOpen, homeTeamName, awayTeamName);
+    function getBetMetaInfo() public view returns(bool, string, string, uint) {
+        return (isOpen, homeTeamName, awayTeamName, expiration);
     }
 
     function getWinner() isSettled public view returns(uint8) {
@@ -87,19 +90,15 @@ contract SingleBet {
         msg.sender.transfer(reward1 + reward2);
     }
 
-    // TODO
-    function triggerPayout() isOwner isSettled public view {
-        
-    }
-
     /**
     * @dev Place bet on open event.
     * @param choice 1 - home team, 2 - away team, 3 - draw
     */
     function bet(uint8 choice) isNotOver isValidChoice(choice) public payable {
-        // TODO restrict because of 10 ** 5 in percentage
         require(bets[choice][msg.sender] + msg.value > bets[choice][msg.sender]);
         require(totalBetsAmount[choice] + msg.value > totalBetsAmount[choice]);
+        require(totalBetsAmount[choice] * 10 ** 6 >= totalBetsAmount[choice]);
+        
         bets[choice][msg.sender] += msg.value;
         totalBetsAmount[choice] += msg.value;
         Bet(choice, msg.sender, msg.value);
@@ -126,27 +125,32 @@ contract SingleBet {
         uint percentageOfWins = getPercent(amount, winnings);
         uint losings = totalBetsAmount[loser1] + totalBetsAmount[loser2];
         uint afterOracle = (losings - (losings / 10));
+        
         return (afterOracle * percentageOfWins) / 10 ** 4;
     }
 
-    // TODO
-    function manualGetWinnigs() public pure {
+    function collectWinnigs() isSettled public {
+        require(payedCustomers[msg.sender] == false);
+        uint initialBet = bets[winner][msg.sender];
+        assert(initialBet > 0);
 
-    }
-
-    // TODO
-    function manualSettleBet() public pure {
-
-    }
-
-    // TODO
-    function changeOracle() public pure {
+        uint8 loser1;
+        uint8 loser2;
+        (loser1, loser2) = getLosers(winner);
+        uint winnings = totalBetsAmount[winner];
+        uint percentageOfWins = getPercent(initialBet, winnings);
+        uint losings = totalBetsAmount[loser1] + totalBetsAmount[loser2];
+        uint winningsForCustomer = ((losings * percentageOfWins) / 10 ** 4) + initialBet;
         
+        payedCustomers[msg.sender] = true;
+        CollectWinnigs(msg.sender, initialBet, winningsForCustomer);
+        
+        msg.sender.transfer(winningsForCustomer);
     }
 
-    // TODO
-    function cancelEvent() public pure {
-
+    function destroyExpiredEvent() isOwner public {
+        require(now > expiration);
+        selfdestruct(owner);
     }
     
     function getLosers(uint8 _winner) private view returns(uint8, uint8) {
@@ -173,6 +177,7 @@ contract SingleBet {
     function getPercent(uint numerator, uint denominator) private pure returns(uint) {
         uint _numerator = numerator * 10 ** (5);
         uint _quotient = ((_numerator / denominator)) / 10;
+
         return _quotient;
     }
 }

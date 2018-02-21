@@ -19,6 +19,8 @@ contract('SingleBet', function (accounts) {
     describe("getBetMetaInfo", () => {
       it("should have correct team names when created", async function () {
         // arrange
+        let now = new Date();
+        let expiration = now.setDate(now.getDate() + 7) // 7 days after creation
 
         // act
         let data = await instance.getBetMetaInfo();
@@ -27,6 +29,10 @@ contract('SingleBet', function (accounts) {
         assert.equal(true, data[0], "Bet is not open");
         assert.equal(initialParams._homeTeamName, data[1]);
         assert.equal(initialParams._awayTeamName, data[2]);
+        let contractExpiration = Number(data[3].toString()) * 1000;
+        let diff = expiration - contractExpiration;
+        assert.isAbove(diff, 0);
+        assert.isBelow(diff, 1000); // 'now' created before contact
       });
     });
 
@@ -103,17 +109,6 @@ contract('SingleBet', function (accounts) {
         assert.isBelow(diff, 0); // gas money
       });
     });
-
-    describe("triggerPayout", () => {
-      it("should Todo", async function () {
-        // arrange
-
-        // act
-
-        // assert
-
-      })
-    })
 
     describe("getWinner", () => {
       it("should return error when NOT settled", async function () {
@@ -353,54 +348,223 @@ contract('SingleBet', function (accounts) {
       });
     });
 
-    describe("manualGetWinnigs", () => {
-      it("should TODO", async function () {
+    describe("collectWinnigs", () => {
+      it("should return error when nothing to get", async function () {
         // arrange
+        let ex = null;
+        await instance.settleBet(1, {
+          from: initialParams._oracle
+        });
 
         // act
+        try {
+          await instance.collectWinnigs();
+        } catch (e) {
+          ex = e
+        }
 
         // assert
-        assert.fail();
+        assert.isNotNull(ex);
       });
-    });
-    describe("manualSettleBet", () => {
-      it("should TODO", async function () {
+
+      it("should return error when event not settled", async function () {
         // arrange
+        let ex = null;
+        await instance.bet(1, {
+          from: accounts[3],
+          value: web3.toWei(2, 'kwei')
+        })
 
         // act
+        try {
+          await instance.collectWinnigs({
+            from: accounts[3]
+          });
+        } catch (e) {
+          ex = e
+        }
 
         // assert
-        assert.fail();
+        assert.isNotNull(ex);
       });
-    });
-    describe("changeOracle", () => {
-      it("should TODO", async function () {
+
+      it("should return error when trying to get payed more than once", async function () {
         // arrange
+        let ex = null;
+        await instance.bet(1, {
+          from: accounts[3],
+          value: web3.toWei(2, 'kwei')
+        })
+        await instance.settleBet(1, {
+          from: initialParams._oracle
+        });
 
         // act
+        await instance.collectWinnigs({
+          from: accounts[3]
+        });
+        try {
+          await instance.collectWinnigs({
+            from: accounts[3]
+          });
+        } catch (e) {
+          ex = e
+        }
 
         // assert
-        assert.fail();
+        assert.isNotNull(ex);
       });
-    });
-    describe("cancelEvent", () => {
-      it("should TODO", async function () {
-        // arrange
+
+      it("should return bet amount when no other has betted against", async function () {
+        let acc = accounts[3];
+        await instance.bet(1, {
+          from: acc,
+          value: web3.toWei(2, 'gwei')
+        })
+        await instance.settleBet(1, {
+          from: initialParams._oracle
+        });
+
+        let startBalance = web3.eth.getBalance(acc).toString();
 
         // act
+        let result = await instance.collectWinnigs({
+          from: acc
+        });
 
         // assert
-        assert.fail();
+        let endBalance = web3.eth.getBalance(acc).toString();
+        let usedGas = result.receipt.gasUsed * web3.toWei(100, "Gwei") + 20000;
+        let winnings = endBalance - startBalance + usedGas;
+
+        // winnig should be 0 gwei, 2 gwei initial bet 
+        // with the gas compensation should be above 2 gwei
+        assert.isAbove(winnings, web3.toWei(2, 'gwei'));
+        assert.isBelow(winnings, web3.toWei(2.1, 'gwei'));
       });
-    });
-    describe("triggerPayout", () => {
-      it("should TODO", async function () {
-        // arrange
+
+      it("should return bet amount with percentage of losings", async function () {
+        let acc = accounts[3];
+        let amount = web3.toWei(2, 'gwei');
+        await instance.bet(1, {
+          from: acc,
+          value: amount
+        })
+        await instance.bet(2, {
+          from: accounts[4],
+          value: web3.toWei(5, 'gwei')
+        })
+        await instance.settleBet(1, {
+          from: initialParams._oracle
+        });
+
+        let startBalance = web3.eth.getBalance(acc).toString();
 
         // act
+        let result = await instance.collectWinnigs({
+          from: acc
+        });
 
         // assert
-        assert.fail();
+        let endBalance = web3.eth.getBalance(acc).toString();
+        let usedGas = result.receipt.gasUsed * web3.toWei(100, "Gwei") + 20000;
+        let winnings = endBalance - startBalance + usedGas;
+
+        // winnig should be 4.5 gwei 2 gwei initial bet 
+        // with the gas compensation should be above 6.5 gwei
+        assert.isAbove(winnings, web3.toWei(6.5, 'gwei'));
+        assert.isBelow(winnings, web3.toWei(6.51, 'gwei'));
+      });
+
+      it("should return bet amount with percentage of losings complex", async function () {
+        let acc = accounts[3];
+        let amount = web3.toWei(2, 'gwei');
+        await instance.bet(1, {
+          from: acc,
+          value: amount
+        })
+        await instance.bet(2, {
+          from: accounts[4],
+          value: web3.toWei(5, 'gwei')
+        })
+        await instance.bet(3, {
+          from: accounts[8],
+          value: web3.toWei(1, 'gwei')
+        })
+        await instance.settleBet(1, {
+          from: initialParams._oracle
+        });
+
+        let startBalance = web3.eth.getBalance(acc).toString();
+
+        // act
+        let result = await instance.collectWinnigs({
+          from: acc
+        });
+
+        // assert
+        let endBalance = web3.eth.getBalance(acc).toString();
+        let usedGas = result.receipt.gasUsed * web3.toWei(100, "Gwei") + 20000;
+        let winnings = endBalance - startBalance + usedGas;
+
+        // winnig should be 5.4 gwei 2 gwei initial bet 
+        // with the gas compensation should be above 7.4 gwei
+        assert.isAbove(winnings, web3.toWei(7.4, 'gwei'));
+        assert.isBelow(winnings, web3.toWei(7.41, 'gwei'));
+      });
+
+      it("should return bet amount with percentage of losings complex 2", async function () {
+        let acc = accounts[3];
+        let amount = web3.toWei(2, 'gwei');
+        await instance.bet(1, {
+          from: acc,
+          value: amount
+        })
+        await instance.bet(2, {
+          from: accounts[4],
+          value: web3.toWei(5, 'gwei')
+        })
+        await instance.bet(1, {
+          from: accounts[5],
+          value: web3.toWei(6, 'gwei')
+        })
+        await instance.bet(3, {
+          from: accounts[6],
+          value: web3.toWei(1, 'gwei')
+        })
+        await instance.bet(2, {
+          from: accounts[7],
+          value: web3.toWei(8, 'gwei')
+        })
+        await instance.bet(1, {
+          from: accounts[7],
+          value: web3.toWei(1, 'gwei')
+        })
+        await instance.bet(3, {
+          from: accounts[8],
+          value: web3.toWei(3, 'gwei')
+        })
+        await instance.settleBet(1, {
+          from: initialParams._oracle
+        });
+
+        let startBalance = web3.eth.getBalance(acc).toString();
+
+        // act
+        let result = await instance.collectWinnigs({
+          from: acc
+        });
+
+        // assert
+        let endBalance = web3.eth.getBalance(acc).toString();
+        let usedGas = result.receipt.gasUsed * web3.toWei(100, "Gwei") + 20000;
+        let winnings = endBalance - startBalance + usedGas;
+
+        // winnigs should be 17, after oracle 15.3
+        // betters on winnig 9, initial bet % = 22.22%
+        // with the gas compensation should be above 3.39966 + 2 = 5.39966
+        assert.isAbove(winnings, web3.toWei(5.39966, 'gwei'));
+        assert.isBelow(winnings, web3.toWei(5.4, 'gwei'));
       });
     });
   });
