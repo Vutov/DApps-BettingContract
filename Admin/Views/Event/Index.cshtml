@@ -1,0 +1,21 @@
+﻿@{
+    ViewBag.Title = "title";
+    Layout = "_Layout";
+}
+
+<h2>Create Event</h2>
+
+<div class="row">
+    @using (Html.BeginForm("Create", "Event", new { }, FormMethod.Post, true, new { @Class = "form" }))
+    {
+        <div class="form-group">
+            <label for="HomeTeamName">Home team name:</label>
+            @Html.TextBox("HomeTeamName", "", null, new { @class = "form-control", name = "HomeTeamName" })
+        </div>
+        <div class="form-group">
+            <label for="AwayTeamName">Away team name:</label>
+            @Html.TextBox("AwayTeamName", "", null, new { @class = "form-control", name = "AwayTeamName" })
+        </div>
+        <button type="submit" class="btn btn-primary">Save</button>
+    }
+</div>

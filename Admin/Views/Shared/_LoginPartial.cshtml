@@ -1,0 +1,14 @@
+@using Admin.Models.DbModels
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<User> SignInManager
+@inject UserManager<User> UserManager
+
+@if (SignInManager.IsSignedIn(User))
+{
+    <div>Hello @UserManager.GetUserName(User)!</div>
+}
+else
+{
+    @Html.ActionLink("Register", "Register", "Account")
+    @Html.ActionLink("Log in", "Login", "Account")
+}
