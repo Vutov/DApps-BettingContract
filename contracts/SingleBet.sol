@@ -56,7 +56,7 @@ contract SingleBet {
         homeTeamName = _homeTeamName;
         awayTeamName = _awayTeamName;
         isOpen = true;
-        expiration = now + 1 weeks;
+        expiration = now + 1 minutes; //+ 1 weeks; For demo purposes commented out
     }
 
     function getBetMetaInfo() public view returns(bool, string, string, uint) {
@@ -72,7 +72,7 @@ contract SingleBet {
     * as reward for giving the result.
     * @param _winner 1 - home team, 2 - away team, 3 - draw
     */
-    function settleBet(uint8 _winner) public {
+    function settleBet(uint8 _winner) isNotOver isValidChoice(_winner) public {
         require(msg.sender == oracle);
         isOpen = false;
         winner = _winner;

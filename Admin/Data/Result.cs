@@ -12,8 +12,14 @@ namespace Admin.Data
             this.Messages = messages.ToList();
         }
 
-        public bool Success { get; set; }
-        public List<string> Messages { get; set; }
+        public bool Success { get; }
+
+        public List<string> Messages { get; }
+
+        public string GetListMessages()
+        {
+            return string.Join(", ", this.Messages);
+        }
 
         public static Result Ok(params string[] messages)
         {
@@ -23,6 +29,26 @@ namespace Admin.Data
         public static Result Fail(params string[] messages)
         {
             return new Result(false, messages);
+        }
+    }
+
+    public class Result<T> : Result
+    {
+        protected Result(bool status, T value, params string[] messages): base(status, messages)
+        {
+            this.Value = value;
+        }
+
+        public T Value { get; }
+        
+        public static Result<T> Ok(T value, params string[] messages)
+        {
+            return new Result<T>(true, value, messages);
+        }
+
+        public new static Result<T> Fail(params string[] messages)
+        {
+            return new Result<T>(false, default(T), messages);
         }
     }
 }

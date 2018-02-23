@@ -29,10 +29,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Services\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\poc\eth\Nethereum\src\Nethereum.Web3\Nethereum.Web3.csproj" />
   </ItemGroup>
 

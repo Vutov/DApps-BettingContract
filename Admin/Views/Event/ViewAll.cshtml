@@ -1,0 +1,99 @@
+﻿@using Admin.Models.DbModels
+@model Admin.Models.ViewModels.EventViewModels.EventsViewModel
+
+@{
+    ViewBag.Title = "Events";
+    Layout = "_Layout";
+}
+
+<h2>Events</h2>
+
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Address</th>
+            <th>Home Team Name</th>
+            <th>Away Team Name</th>
+            <th>Expire At</th>
+            <th>Is Open</th>
+            <th>Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var e in Model?.Events ?? new List<Event>())
+        {
+            <tr>
+                <th scope="row">@e.ID</th>
+                <td>@e.Address</td>
+                <td class="choice" onclick="Select('@e.ID', '@e.IsOpen', 1, this)">@e.HomeTeamName</td>
+                <td class="choice" onclick="Select('@e.ID', '@e.IsOpen', 2, this)">@e.AwayTeamName</td>
+                <td>
+                    @if (DateTime.UtcNow < e.ExpireAt)
+                    {
+                        @e.ExpireAt.ToString("G")
+                    }
+                    else
+                    {
+                        using (Html.BeginForm("Close", "Event", null, FormMethod.Post, true, new { }))
+                        {
+                            <input type="submit" value="Close" class="btn btn-danger" />
+                            <input type="hidden" name="Address" value="@e.Address" />
+                        }
+                    }
+            </td>
+            <td>
+                @if (e.IsOpen)
+                {
+                    using (Html.BeginForm("Settle", "Event", null, FormMethod.Post, true, new { onsubmit = "return validateMyForm('" + e.ID + "', this);" }))
+                    {
+                        <input type="submit" value="Settle" class="btn btn-success" />
+                        <input type="hidden" id="@e.ID" name="Winner" value="0" />
+                        <input type="hidden" name="Address" value="@e.Address" />
+                    }
+                }
+                else
+                {
+                    <span>Settled</span>
+                }
+            </td>
+            <td id="@e.Address"><button onclick="GetAmount('@e.Address')" type="button" class="btn btn-warning">Amount</button></td>
+        </tr>
+    }
+</table>
+
+<script>
+    function validateMyForm(id, self) {
+        // TODO highlight
+        let choices = $(self.closest("tr")).children(".choice");
+
+        return Number($("#" + id).val()) > 0;
+    }
+
+    function GetAmount(address) {
+        $.ajax({
+            type: "POST",
+            url: "/event/balance",
+            data: { Address: address },
+            success: function (data) {
+                let div = $('<div class="coursor">' + data + ' Ethers</div>');
+                div.click(GetAmount.bind(div, address));
+                $("#" + address).html(div);
+            }
+        });
+    }
+
+    function Select(id, isOpen, choice, self) {
+        if (isOpen.toLowerCase() === "true") {
+            let hiddenEl = $("#" + id);
+            let $self = $(self);
+            if ($self.hasClass("bg-success")) {
+                $self.removeClass("bg-success");
+                hiddenEl.val(Number(hiddenEl.val()) - choice);
+            } else {
+                $self.addClass("bg-success");
+                hiddenEl.val(Number(hiddenEl.val()) + choice);
+            }
+        }
+    }
+</script>

@@ -8,12 +8,13 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.Internal;
 using System;
 
-namespace Admin.Data
+namespace Admin.Data.Migrations
 {
     [DbContext(typeof(InvoiceDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20180223183210_events")]
+    partial class events
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -32,8 +33,6 @@ namespace Admin.Data
                     b.Property<DateTime>("ExpireAt");
 
                     b.Property<string>("HomeTeamName");
-
-                    b.Property<bool>("IsOpen");
 
                     b.HasKey("ID");
 

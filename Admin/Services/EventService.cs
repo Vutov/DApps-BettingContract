@@ -1,54 +1,139 @@
 ﻿namespace Admin.Services
 {
     using System;
+    using System.IO;
+    using System.Linq;
+    using System.Numerics;
     using System.Threading;
     using System.Threading.Tasks;
     using Data;
+    using Models.ContractModels;
+    using Nethereum.Contracts;
     using Nethereum.Hex.HexTypes;
+    using Nethereum.Util;
     using Nethereum.Web3;
-
+    using Newtonsoft.Json;
+    
     public class EventService
     {
-        private string _node;
+        private readonly HexBigInteger _defaultGas = new HexBigInteger(3000000);
+        private readonly HexBigInteger _zero = new HexBigInteger(0);
 
-        public EventService(string node)
+        private readonly Web3 _web3;
+        private readonly string _contractName;
+
+        public EventService(string node, string contractName)
         {
-            _node = node;
+            this._web3 = new Web3(node);
+            this._contractName = contractName;
         }
 
-        public async Task<Result> CreateEvent(InvoiceDbContext context, string homeTeamName, string awayTeamName)
+        public Result<string> Deploy(params object[] prms)
         {
-            // TODO read from drive
-            var senderAddress = "0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1";
-            var oracle = "0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1";
-            var abi = @"[{""constant"": false,""inputs"": [{""name"": ""num"",""type"": ""uint256""}],""name"": ""set"",""outputs"": [],""payable"": false,""stateMutability"": ""nonpayable"",""type"": ""function""},{""constant"": true,""inputs"": [],""name"": ""get"",""outputs"": [{""name"": ""num"",""type"": ""uint256""}],""payable"": false,""stateMutability"": ""view"",""type"": ""function""}]";
-            var byteCode =
-                "0x6060604052341561000f57600080fd5b60d38061001d6000396000f3006060604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c14606e575b600080fd5b3415605857600080fd5b606c60048080359060200190919050506094565b005b3415607857600080fd5b607e609e565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a72305820885c3a34eef4c2f1cfce7d0149f0f4cbfc45b79eef56b0a31ca99e24691eea700029";
-
-            var web3 = new Web3(_node);
-            string contractAddress;
-            try
+            var contract = this.GetContractDefinition(_contractName);
+            var senderAddress = this.GetSender();
+            return this.Exec(async () =>
             {
-                var transactionHash = await web3.Eth.DeployContract.SendRequestAsync(abi, byteCode, senderAddress, new HexBigInteger(900000));
+                var transactionHash = await this._web3.Eth.DeployContract.SendRequestAsync(contract.GetAbi(), contract.ByteCode, senderAddress, _defaultGas, prms);
 
-                var receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transactionHash);
-
+                var receipt = await _web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transactionHash);
                 while (receipt == null)
                 {
                     Thread.Sleep(1000);
-                    receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transactionHash);
+                    receipt = await _web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transactionHash);
                 }
 
-                contractAddress = receipt.ContractAddress;
+                var contractAddress = receipt.ContractAddress;
+                return Result<string>.Ok(contractAddress);
+            });
+        }
+
+        public Result<EventInfo> GetEventInfo(string address)
+        {
+           return this.Exec(async () =>
+           {
+               var contract = this.GetContract(address);
+               var getFunction = contract.GetFunction("getBetMetaInfo");
+               var resultget = await getFunction.CallDeserializingToObjectAsync<EventInfo>();
+
+               return Result<EventInfo>.Ok(resultget);
+           });
+        }
+
+        public Result<decimal> GetEventBalance(string address)
+        {
+            return this.Exec(async () =>
+            {
+                var contract = this.GetContract(address);
+                var contractBalance = await contract.GetFunction("checkTotalBalance").CallAsync<BigInteger>();
+                var ethers = Web3.Convert.FromWei(contractBalance, UnitConversion.EthUnit.Ether);
+                return Result<decimal>.Ok(ethers);
+            });
+        }
+
+        public Result SettleBet(string address, int winner)
+        {
+            return this.Exec(async () =>
+            {
+                var senderAddress = this.GetSender();
+                var contract = this.GetContract(address);
+                await contract.GetFunction("settleBet").SendTransactionAsync(senderAddress, _defaultGas, _zero, winner);
+            });
+        }
+
+        public Result CloseExpiredEvent(string address)
+        {
+            return this.Exec(async () =>
+            {
+                var senderAddress = this.GetSender();
+                var contract = this.GetContract(address);
+                await contract.GetFunction("destroyExpiredEvent").SendTransactionAsync(senderAddress, _defaultGas, _zero);
+            });
+        }
+
+        public string GetSender()
+        {
+            var address = File.ReadAllLines("../address.txt").First();
+            return address;
+        }
+
+        private Contract GetContract(string address)
+        {
+            var info = this.GetContractDefinition(_contractName);
+            var contract = _web3.Eth.GetContract(info.GetAbi(), address);
+
+            return contract;
+        }
+
+        private ContractMetaInfo GetContractDefinition(string name)
+        {
+            var json = File.ReadAllText($"../build/contracts/{name}.json");
+            return JsonConvert.DeserializeObject<ContractMetaInfo>(json);
+        }
+
+        private Result Exec(Func<Task> func)
+        {
+            try
+            {
+                func().Wait();
+                return Result.Ok();
             }
             catch (Exception ex)
             {
                 return Result.Fail(ex.ToString());
             }
+        }
 
-            // TODO ef save in db
-            
-            return Result.Ok();
+        private Result<T> Exec<T>(Func<Task<Result<T>>> func)
+        {
+            try
+            {
+                return func().Result;
+            }
+            catch (Exception ex)
+            {
+                return Result<T>.Fail(ex.ToString());
+            }
         }
     }
 }

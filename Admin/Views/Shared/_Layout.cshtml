@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>@ViewData["Title"] - Invoicer</title>
+    <title>@ViewData["Title"]</title>
 
     <link rel="stylesheet" href="~/css/normalize.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
@@ -13,6 +13,13 @@
     @await Html.PartialAsync("_LoginPartial")
 
     <div class="container">
+
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        @if (string.IsNullOrEmpty(@ViewBag.ErrorMessage) == false)
+        {
+            <h3 id="errorWindow" onclick="hide()" class="col-12 bg-danger rounded text-center text-light">@ViewBag.ErrorMessage</h3>
+        }
+
         @RenderBody()
     </div>
     <footer>
@@ -24,5 +31,10 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @RenderSection("Scripts", required: false)
+    <script>
+        function hide() {
+            $("#errorWindow").hide();
+        }
+    </script>
 </body>
 </html>

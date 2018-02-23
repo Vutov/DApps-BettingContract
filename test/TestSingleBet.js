@@ -108,6 +108,44 @@ contract('SingleBet', function (accounts) {
         let diff = web3.fromWei(endBalance, 'ether') - web3.fromWei(startBalance, 'ether');
         assert.isBelow(diff, 0); // gas money
       });
+
+      it("should NOT allow settling of event when already settled", async function () {
+        // arrange
+        let ex = null;
+
+        // act
+        await instance.settleBet(1, {
+          from: initialParams._oracle
+        });
+
+        try {
+          await instance.settleBet(2, {
+            from: initialParams._oracle
+          });
+        } catch (e) {
+          ex = e;
+        }
+
+        // assert
+        assert.isNotNull(ex);
+      });
+
+      it("should NOT allow settling of event wrong choice", async function () {
+        // arrange
+        let ex = null;
+
+        // act
+        try {
+          await instance.settleBet(4, {
+            from: initialParams._oracle
+          });
+        } catch (e) {
+          ex = e;
+        }
+
+        // assert
+        assert.isNotNull(ex);
+      });
     });
 
     describe("getWinner", () => {

@@ -33,7 +33,7 @@
             
             services.AddMvc();
 
-            services.AddTransient(e => new EventService("http://localhost:8545/"));
+            services.AddTransient(e => new EventService("http://localhost:8545/", "SingleBet"));
         }
         
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
