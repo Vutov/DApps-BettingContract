@@ -113,26 +113,25 @@
             }
 
             var info = _eventService.GetEventInfo(model.Address);
-            if (info.Success)
-            {
-                var evnt = this.DbContext.Events.FirstOrDefault(e => e.Address == model.Address);
-                if (evnt != null)
-                {
-                    evnt.IsOpen = info.Value.IsOpen;
-                    this.DbContext.Events.Update(evnt);
-                    this.DbContext.SaveChanges();
-                }
-            }
-            else
+            if (info.Success == false)
             {
                 this.ViewBag.ErrorMessage = "Getting event info failed";
                 _logger.LogCritical($"GetEventInfo failed {info.GetListMessages()}");
+                return this.View("ViewAll", new EventsViewModel()
+                {
+                    Events = this.DbContext.Events.OrderByDescending(e => e.ID).ToList()
+                });
             }
 
-            return this.View("ViewAll", new EventsViewModel()
+            var evnt = this.DbContext.Events.FirstOrDefault(e => e.Address == model.Address);
+            if (evnt != null)
             {
-                Events = this.DbContext.Events.OrderByDescending(e => e.ID).ToList()
-            });
+                evnt.IsOpen = info.Value.IsOpen;
+                this.DbContext.Events.Update(evnt);
+                this.DbContext.SaveChanges();
+            }
+
+            return this.RedirectToAction("ViewAll");
         }
 
         [HttpPost]

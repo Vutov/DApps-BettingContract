@@ -9,7 +9,7 @@ namespace Admin.Extensions
         public static DateTime UnixTimeStampToDateTime(BigInteger unixTimeStamp)
         {
             DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            dtDateTime = dtDateTime.AddSeconds((double)unixTimeStamp).ToLocalTime();
+            dtDateTime = dtDateTime.AddSeconds((double) unixTimeStamp).ToUniversalTime();
             return dtDateTime;
         }
     }

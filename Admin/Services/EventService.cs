@@ -30,10 +30,10 @@
 
         public Result<string> Deploy(params object[] prms)
         {
-            var contract = this.GetContractDefinition(_contractName);
-            var senderAddress = this.GetSender();
             return this.Exec(async () =>
             {
+                var contract = this.GetContractDefinition(_contractName);
+                var senderAddress = await this.UnlockAccount();
                 var transactionHash = await this._web3.Eth.DeployContract.SendRequestAsync(contract.GetAbi(), contract.ByteCode, senderAddress, _defaultGas, prms);
 
                 var receipt = await _web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transactionHash);
@@ -75,7 +75,7 @@
         {
             return this.Exec(async () =>
             {
-                var senderAddress = this.GetSender();
+                var senderAddress = await this.UnlockAccount();
                 var contract = this.GetContract(address);
                 await contract.GetFunction("settleBet").SendTransactionAsync(senderAddress, _defaultGas, _zero, winner);
             });
@@ -85,7 +85,7 @@
         {
             return this.Exec(async () =>
             {
-                var senderAddress = this.GetSender();
+                var senderAddress = await this.UnlockAccount();
                 var contract = this.GetContract(address);
                 await contract.GetFunction("destroyExpiredEvent").SendTransactionAsync(senderAddress, _defaultGas, _zero);
             });
@@ -94,6 +94,15 @@
         public string GetSender()
         {
             var address = File.ReadAllLines("../address.txt").First();
+            return address;
+        }
+
+        private async Task<string> UnlockAccount()
+        {
+            var address = this.GetSender();
+
+            // TODO bug in ganache-core dont allow unlocking of accounts - fixed in 2.1.0
+            //await _web3.Personal.UnlockAccount.SendRequestAsync(address, "", new HexBigInteger(120));
             return address;
         }
 
