@@ -25,7 +25,9 @@
         {
             <tr>
                 <th scope="row">@e.ID</th>
-                <td>@e.Address</td>
+                <td>
+                    <a href='https://ropsten.etherscan.io/address/@e.Address'>@e.Address</a>
+                </td>
                 <td class="choice" onclick="Select('@e.ID', '@e.IsOpen', 1, this)">@e.HomeTeamName</td>
                 <td class="choice" onclick="Select('@e.ID', '@e.IsOpen', 2, this)">@e.AwayTeamName</td>
                 <td>

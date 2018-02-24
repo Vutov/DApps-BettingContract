@@ -32,7 +32,7 @@
         {
             return this.Exec(async () =>
             {
-                var contract = this.GetContractDefinition(_contractName);
+                var contract = this.GetContractDefinition();
                 var senderAddress = await this.UnlockAccount();
                 var transactionHash = await this._web3.Eth.DeployContract.SendRequestAsync(contract.GetAbi(), contract.ByteCode, senderAddress, _defaultGas, prms);
 
@@ -97,6 +97,12 @@
             return address;
         }
 
+        public string GetAbi()
+        {
+            var def = this.GetContractDefinition();
+            return def.GetAbi();
+        }
+
         private async Task<string> UnlockAccount()
         {
             var address = this.GetSender();
@@ -108,15 +114,15 @@
 
         private Contract GetContract(string address)
         {
-            var info = this.GetContractDefinition(_contractName);
+            var info = this.GetContractDefinition();
             var contract = _web3.Eth.GetContract(info.GetAbi(), address);
 
             return contract;
         }
 
-        private ContractMetaInfo GetContractDefinition(string name)
+        private ContractMetaInfo GetContractDefinition()
         {
-            var json = File.ReadAllText($"../build/contracts/{name}.json");
+            var json = File.ReadAllText($"../build/contracts/{_contractName}.json");
             return JsonConvert.DeserializeObject<ContractMetaInfo>(json);
         }
 
