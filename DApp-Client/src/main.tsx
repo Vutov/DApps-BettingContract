@@ -7,7 +7,7 @@ import { App } from './аpp';
 import { HomeComponent } from './components/home/home.component';
 import { EventsComponent } from './components/events/events.component';
 import { BetsComponent } from './components/bets/bets.component';
-import { OrdersComponent } from './components/orders/orders.component';
+import { HistoryComponent } from './components/history/history.component';
 import { NotFoundComponent } from "./components/common/not-found.component";
 
 const history = createHashHistory();
@@ -19,7 +19,7 @@ ReactDOM.render(
         <Switch>
           <Route path="/" exact={true} component={HomeComponent} />
           <Route path="/events" component={EventsComponent} />
-          <Route path="/history" component={HomeComponent} />
+          <Route path="/history" component={HistoryComponent} />
           <Route path="/bet/:address" component={BetsComponent} />
           <Route component={NotFoundComponent} />
         </Switch>

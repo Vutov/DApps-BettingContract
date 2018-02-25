@@ -92,6 +92,10 @@ export class BetsComponent extends React.Component<any, any> {
                         <div>Away Team: </div>
                         <div>{event.awayTeam}</div>
                     </div>
+                    <div className='form-group'>
+                        <div>Event Expiration: </div>
+                        <div>{event.expireAt}</div>
+                    </div>
 
                     <h2 className='lead'>Place Bet</h2>
                     <form onSubmit={this.onSubmitHandler.bind(this)}>

@@ -96,3 +96,11 @@ body {
 .p-10 {
   padding: 10px;
 }
+
+.mt-1 {
+  margin-top: 10px;
+}
+
+.cursor {
+  cursor: pointer;
+}

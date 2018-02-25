@@ -23,7 +23,7 @@ export class EventsBehavior {
 
     public getEventInfo(address: string, callback: Function) {
         exec(address, 'getBetMetaInfo', [], function (data) {
-            let exdpireAt = new Date(Number(data[3].toString()) * 1000);
+            let exdpireAt = new Date(Number(data[3].toString()) * 1000).toLocaleString();
             let event = new ExtendedEventModel(address, data[1], data[2], data[0], exdpireAt);
 
             callback(event);

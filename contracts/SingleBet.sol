@@ -133,19 +133,33 @@ contract SingleBet {
         require(payedCustomers[msg.sender] == false);
         uint initialBet = bets[winner][msg.sender];
         assert(initialBet > 0);
+        
+        uint winningsForCustomer = getWinnings();
+
+        payedCustomers[msg.sender] = true;
+        CollectWinnigs(msg.sender, initialBet, winningsForCustomer);
+        
+        msg.sender.transfer(winningsForCustomer);
+    }
+
+    function getWinnings() isSettled public view returns(uint) {
+        require(payedCustomers[msg.sender] == false);
+        uint initialBet = bets[winner][msg.sender];
+        if (initialBet == 0) {
+            return 0;
+        }
 
         uint8 loser1;
         uint8 loser2;
         (loser1, loser2) = getLosers(winner);
         uint winnings = totalBetsAmount[winner];
+
+        
         uint percentageOfWins = getPercent(initialBet, winnings);
         uint losings = totalBetsAmount[loser1] + totalBetsAmount[loser2];
         uint winningsForCustomer = ((losings * percentageOfWins) / 10 ** 4) + initialBet;
         
-        payedCustomers[msg.sender] = true;
-        CollectWinnigs(msg.sender, initialBet, winningsForCustomer);
-        
-        msg.sender.transfer(winningsForCustomer);
+        return winningsForCustomer;
     }
 
     function destroyExpiredEvent() isOwner public {

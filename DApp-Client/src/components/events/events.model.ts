@@ -6,7 +6,7 @@ export interface IEventModel {
 }
 
 export interface IExtendedEventModel extends IEventModel {
-    expireAt: Date,
+    expireAt: string,
 }
 
 export class EventModel implements IEventModel {
@@ -28,9 +28,9 @@ export class ExtendedEventModel implements IExtendedEventModel {
     homeTeam: string;
     awayTeam: string;
     isOpen: boolean;
-    expireAt: Date;
+    expireAt: string;
 
-    constructor(address: string, homeTeam: string, awayTeam: string, isOpen: boolean, expireAt: Date) {
+    constructor(address: string, homeTeam: string, awayTeam: string, isOpen: boolean, expireAt: string) {
         this.address = address;
         this.homeTeam = homeTeam;
         this.awayTeam = awayTeam;

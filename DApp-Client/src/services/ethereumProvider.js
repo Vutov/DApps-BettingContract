@@ -53,6 +53,15 @@ function transaction(address, funcName, value, params, callback) {
     });
 }
 
+function getAddress() {
+    if (typeof web3 === 'undefined') {
+        observer.showError(metaMaskError);
+        return;
+    }
+
+    return web3.eth.accounts[0];
+}
+
 async function getAbi() {
     let abi = sessionStorage.getItem("abi");
     if (!abi) {
@@ -102,4 +111,4 @@ function getMoneyTypes() {
     ]
 }
 
-export { exec, transaction, getMoneyTypes, getWei, getFromWei };
+export { exec, transaction, getMoneyTypes, getWei, getFromWei, getAddress };

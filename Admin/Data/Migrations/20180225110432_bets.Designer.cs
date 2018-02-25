@@ -8,12 +8,13 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.Internal;
 using System;
 
-namespace Admin.Data
+namespace Admin.Data.Migrations
 {
     [DbContext(typeof(InvoiceDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20180225110432_bets")]
+    partial class bets
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -33,7 +34,7 @@ namespace Admin.Data
 
                     b.HasIndex("EventID");
 
-                    b.ToTable("Bets");
+                    b.ToTable("Bet");
                 });
 
             modelBuilder.Entity("Admin.Models.DbModels.Event", b =>
