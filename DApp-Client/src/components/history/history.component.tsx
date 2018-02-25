@@ -1,8 +1,7 @@
 import * as React from 'react'
+import observer from '../../services/observer'
 import { HistoryBehavior } from './history.behavior'
-import { EventsBehavior } from '../events/events.behavior'
-import { IBetModel } from "./history.model";
-import { IEventModel } from "../events/events.model";
+import { IBetModel, IBetDetails } from "./history.model";
 import { Formatter } from "../common/formatters";
 import { Table, Pager } from 'react-bootstrap'
 
@@ -19,7 +18,6 @@ export class HistoryComponent extends React.Component<any, any> {
     }
 
     private behavior: HistoryBehavior = new HistoryBehavior()
-    private eventBehavior: EventsBehavior = new EventsBehavior()
 
     componentDidMount() {
         this.behavior.getBets(function (data: Array<IBetModel>) {
@@ -29,56 +27,62 @@ export class HistoryComponent extends React.Component<any, any> {
 
     expand(address: string) {
         this.setState({
-            selectedRow: address,
-            details: {
-                betOnHome: 10000,
-                betOnAway: 100,
-                betOnDraw: 100,
-                winner: 'Arsenal',
-                winnings: '0',
-                isSettled: true
-            }
+            selectedRow: address
         });
+
+        this.behavior.getBetsDetails(address, function (data: IBetDetails) {
+            this.setState({
+                details: data
+            });
+        }.bind(this));
+    }
+
+    collectMoney() {
+        this.behavior.collect(this.state.selectedRow, function () {
+            observer.showSuccess(this.state.details.winnings + " Ether collected!");
+            this.state.details.winnings = '0';
+        }.bind(this));
     }
 
     buildDetails() {
-        if (!this.state.details) {
+        let details = this.state.details as IBetDetails
+        if (!details) {
             return null;
         }
 
         let Winnings = null;
-        if (this.state.details.isSettled) {
+        if (details.isSettled) {
             let Button = null;
             let className = 'label-danger';
-            if ( this.state.details.winnings !== '0') {
+            if (details.winnings !== '0') {
                 className = 'label-success';
-                Button = <input type="button" value='Collect Winnigs' className='mt-1 btn btn-default' />
+                Button = <input type="button" value='Collect Winnigs' className='mt-1 btn btn-default' onClick={this.collectMoney.bind(this)} />
             }
 
             Winnings = (<div className='row mt-1'>
                 <div className='col-xs-6'>
                     {Button}
                 </div>
-                <div className={'col-xs-6 mt-1 label ' + className}>Winnings {this.state.details.winnings} Ethers</div>
+                <div className={'col-xs-6 mt-1 label ' + className}>Winnings {details.winnings} Ethers</div>
             </div>)
         }
 
         return (<div>
             <div className='row mt-1'>
                 <div className='col-xs-6'>Winner:</div>
-                <div className='col-xs-6 label label-success'>{this.state.details.winner} Ethers</div>
+                <div className='col-xs-6 label label-success'>{details.winner}</div>
             </div>
             <div className='row mt-1'>
                 <div className='col-xs-6'>Bets on home team:</div>
-                <div className='col-xs-6'>{this.state.details.betOnHome} Ethers</div>
+                <div className='col-xs-6'>{details.betOnHome} Ethers</div>
             </div>
             <div className='row mt-1'>
                 <div className='col-xs-6'>Bets on away team:</div>
-                <div className='col-xs-6'>{this.state.details.betOnAway} Ethers</div>
+                <div className='col-xs-6'>{details.betOnAway} Ethers</div>
             </div>
             <div className='row mt-1'>
                 <div className='col-xs-6'>Bets on draw:</div>
-                <div className='col-xs-6'>{this.state.details.betOnDraw} Ethers</div>
+                <div className='col-xs-6'>{details.betOnDraw} Ethers</div>
             </div>
             {Winnings}
         </div>)

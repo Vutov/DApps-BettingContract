@@ -30,13 +30,13 @@ export class EventsGridComponent extends React.Component<EventsGridProps, any> {
                                 if (e.isOpen) {
                                     return (
                                         <tr key={e.address}>
-                                            <td>
+                                            <td className='p-10'>
                                                 <a href={linkRopsten}>{e.address}</a>
                                             </td>
-                                            <td>{e.homeTeam}</td>
-                                            <td>{e.awayTeam}</td>
+                                            <td className='p-10'>{e.homeTeam}</td>
+                                            <td className='p-10'>{e.awayTeam}</td>
                                             <td>
-                                                <Link to={linkBet}>Place a bet</Link>
+                                                <Link to={linkBet} className='btn btn-sm btn-danger'>Place a bet</Link>
                                             </td>
                                         </tr>
                                     )

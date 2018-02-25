@@ -17,7 +17,7 @@ export class BetsComponent extends React.Component<any, any> {
         this.state = {
             event: {},
             amount: 0,
-            winner: 1,
+            winner: 3,
             type: "ether",
             possibleWinnig: null
         }

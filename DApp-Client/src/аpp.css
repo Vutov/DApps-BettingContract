@@ -104,3 +104,8 @@ body {
 .cursor {
   cursor: pointer;
 }
+
+.p-10 {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}

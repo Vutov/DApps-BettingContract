@@ -143,7 +143,6 @@ contract SingleBet {
     }
 
     function getWinnings() isSettled public view returns(uint) {
-        require(payedCustomers[msg.sender] == false);
         uint initialBet = bets[winner][msg.sender];
         if (initialBet == 0) {
             return 0;
