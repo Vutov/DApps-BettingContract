@@ -17,5 +17,6 @@
         public bool IsOpen { get; set; }
         public DateTime ExpireAt { get; set; }
         public virtual ICollection<Bet> Bets { get; set; }
+        public bool IsDeleted { get; set; }
     }
 }

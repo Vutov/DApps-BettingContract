@@ -23,7 +23,8 @@
     <tbody>
         @foreach (var e in Model?.Events ?? new List<Event>())
         {
-            <tr>
+            var rowClass = e.IsDeleted ? "bg-secondary text-white" : "";
+            <tr class="@rowClass">
                 <th scope="row">@e.ID</th>
                 <td>
                     <a href='https://ropsten.etherscan.io/address/@e.Address'>@e.Address</a>
@@ -31,7 +32,11 @@
                 <td class="choice" onclick="Select('@e.ID', '@e.IsOpen', 1, this)">@e.HomeTeamName</td>
                 <td class="choice" onclick="Select('@e.ID', '@e.IsOpen', 2, this)">@e.AwayTeamName</td>
                 <td>
-                    @if (DateTime.UtcNow < e.ExpireAt)
+                    @if (e.IsDeleted)
+                    {
+                        <span>-</span>
+                    }
+                    else if (DateTime.UtcNow < e.ExpireAt)
                     {
                         @e.ExpireAt.ToString("G")
                     }
@@ -39,29 +44,33 @@
                     {
                         using (Html.BeginForm("Close", "Event", null, FormMethod.Post, true, new { }))
                         {
-                            <input type="submit" value="Close" class="btn btn-danger" />
+                            <input type="submit" value="Close" class="btn btn-sm btn-danger" />
                             <input type="hidden" name="Address" value="@e.Address" />
                         }
                     }
-            </td>
-            <td>
-                @if (e.IsOpen)
-                {
-                    using (Html.BeginForm("Settle", "Event", null, FormMethod.Post, true, new { onsubmit = "return validateMyForm('" + e.ID + "', this);" }))
+                </td>
+                <td>
+                    @if (e.IsDeleted)
                     {
-                        <input type="submit" value="Settle" class="btn btn-success" />
-                        <input type="hidden" id="@e.ID" name="Winner" value="0" />
-                        <input type="hidden" name="Address" value="@e.Address" />
+                        <span>-</span>
                     }
-                }
-                else
-                {
-                    <span>Settled</span>
-                }
-            </td>
-            <td id="@e.Address"><button onclick="GetAmount('@e.Address')" type="button" class="btn btn-warning">Amount</button></td>
-        </tr>
-    }
+                    else if (e.IsOpen)
+                    {
+                        using (Html.BeginForm("Settle", "Event", null, FormMethod.Post, true, new { onsubmit = "return validateMyForm('" + e.ID + "', this);" }))
+                        {
+                            <input type="submit" value="Settle" class="btn btn-sm btn-success" />
+                            <input type="hidden" id="@e.ID" name="Winner" value="0" />
+                            <input type="hidden" name="Address" value="@e.Address" />
+                        }
+                    }
+                    else
+                    {
+                        <span>Settled</span>
+                    }
+                </td>
+                <td id="@e.Address"><button onclick="GetAmount('@e.Address')" type="button" class="btn btn-sm btn-warning">Amount</button></td>
+            </tr>
+        }
 </table>
 
 <script>

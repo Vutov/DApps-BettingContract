@@ -146,6 +146,16 @@
                 _logger.LogCritical($"CloseExpiredEvent failed {settled.GetListMessages()}");
                 this.ViewBag.ErrorMessage = "Close Expired Event failed";
             }
+            else
+            {
+                var evnt = this.DbContext.Events.FirstOrDefault(e => e.Address == address);
+                if (evnt != null)
+                {
+                    evnt.IsDeleted = true;
+                    this.DbContext.Events.Update(evnt);
+                    this.DbContext.SaveChanges();
+                }
+            }
 
             return this.View("ViewAll", new EventsViewModel()
             {

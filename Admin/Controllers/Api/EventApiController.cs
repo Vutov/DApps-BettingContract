@@ -24,6 +24,7 @@
         public IActionResult GetEvents()
         {
             var events = this.DbContext.Events
+                .Where(e => e.IsDeleted == false)
                 .OrderByDescending(e => e.ID)
                 .ToList();
 
@@ -60,6 +61,7 @@
         {
             var data = this.DbContext.Bets
                 .Where(e => e.Address == address)
+                .Where(e => e.Event.IsDeleted == false)
                 .OrderByDescending(e => e.ID)
                 .Select(b => new
                 {
