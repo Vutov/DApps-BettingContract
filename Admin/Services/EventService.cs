@@ -12,6 +12,7 @@
     using Nethereum.Hex.HexTypes;
     using Nethereum.Util;
     using Nethereum.Web3;
+    using Nethereum.Web3.Accounts;
     using Newtonsoft.Json;
     
     public class EventService
@@ -24,7 +25,8 @@
 
         public EventService(string node, string contractName)
         {
-            this._web3 = new Web3(node);
+            var privateKey = "";
+            this._web3 = new Web3(new Account(privateKey),node);
             this._contractName = contractName;
         }
 
@@ -108,7 +110,7 @@
             var address = this.GetSender();
 
             // TODO bug in ganache-core dont allow unlocking of accounts - fixed in 2.1.0
-            //await _web3.Personal.UnlockAccount.SendRequestAsync(address, "", new HexBigInteger(120));
+            //await _web3.Personal.UnlockAccount.SendRequestAsync(address, "12345678", new HexBigInteger(120));
             return address;
         }
 

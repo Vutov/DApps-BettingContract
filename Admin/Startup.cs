@@ -33,7 +33,9 @@
             
             services.AddMvc();
 
-            services.AddTransient(e => new EventService("http://localhost:8545/", "SingleBet"));
+            //services.AddTransient(e => new EventService("http://localhost:8545/", "SingleBet"));
+            // /PGhw7kPw6Wf619UFjZ1M
+            services.AddTransient(e => new EventService("https://ropsten.infura.io/PGhw7kPw6Wf619UFjZ1M", "SingleBet"));
         }
         
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
