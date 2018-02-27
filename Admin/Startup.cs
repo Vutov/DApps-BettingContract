@@ -1,14 +1,16 @@
 ﻿namespace Admin
 {
+    using System;
     using Data;
     using global::AutoMapper;
     using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.Hosting;
+    using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.DependencyInjection.Extensions;
     using Models.DbModels;
     using Services;
 
@@ -20,7 +22,7 @@
         }
 
         public IConfiguration Configuration { get; }
-        
+
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddAutoMapper();
@@ -31,13 +33,26 @@
             services.AddIdentity<User, IdentityRole>()
                 .AddEntityFrameworkStores<InvoiceDbContext>()
                 .AddDefaultTokenProviders();
-            
-            services.AddMvc();
 
+            services.AddMvc();
+            services.AddDistributedMemoryCache();
+
+            services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromHours(1);
+                options.Cookie.HttpOnly = false;
+            });
+
+            services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             //services.AddTransient(e => new EventService("http://localhost:8545/", "SingleBet"));
-            services.AddTransient(e => new EventService(e.GetService<IMemoryCache>(), "https://ropsten.infura.io/PGhw7kPw6Wf619UFjZ1M", "SingleBet"));
+            services.AddTransient(e =>
+            {
+                var context = e.GetService<IHttpContextAccessor>();
+                var privateKey = context.HttpContext.Session.GetString("PK");
+                return new EventService(privateKey, "https://ropsten.infura.io/PGhw7kPw6Wf619UFjZ1M", "SingleBet");
+            });
         }
-        
+
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             if (env.IsDevelopment())
@@ -59,6 +74,7 @@
                 .AllowAnyMethod()
                 .AllowAnyHeader());
 
+            app.UseSession();
             app.UseMvcWithDefaultRoute();
         }
     }

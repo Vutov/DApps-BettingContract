@@ -5,6 +5,7 @@
     using Filters;
     using Microsoft.AspNetCore.Authentication;
     using Microsoft.AspNetCore.Authorization;
+    using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Caching.Memory;
@@ -20,22 +21,20 @@
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
         private readonly ILogger _logger;
-        private readonly IMemoryCache _cache;
 
         public AccountController(IServiceProvider serviceProvider) : base(serviceProvider)
         {
             _userManager = this.ServiceProvider.GetService<UserManager<User>>();
             _signInManager = this.ServiceProvider.GetService<SignInManager<User>>();
             _logger = this.ServiceProvider.GetService<ILogger<AccountController>>();
-            _cache = this.ServiceProvider.GetService<IMemoryCache>();
         }
 
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> Login(string returnUrl = null)
         {
-            // Clear the existing external cookie to ensure a clean login process
             await this.HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            this.HttpContext.Session.Clear();
 
             this.ViewData["ReturnUrl"] = returnUrl;
             return this.View();
@@ -51,7 +50,7 @@
             var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, isPersistent: false, lockoutOnFailure: false);
             if (result.Succeeded)
             {
-                _cache.Set("PK", model.Key);
+                this.HttpContext.Session.SetString("PK", model.Key);
                 _logger.LogInformation("User logged in.");
                 return this.RedirectToLocal(returnUrl);
             }

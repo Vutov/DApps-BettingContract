@@ -25,9 +25,9 @@
             </ul>
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                    <div id="watch" class="nav-link coursor" onclick="startTime()">Show time</div>
+                    <div id="watch" class="nav-link coursor">Show time</div>
                     <script>
-                        function startTime() {
+                        (function startTime() {
                             let today = new Date();
                             let h = today.getUTCHours();
                             let m = today.getUTCMinutes();
@@ -36,7 +36,7 @@
                             s = checkTime(s);
                             document.getElementById('watch').innerHTML = h + ":" + m + ":" + s;
                             var t = setTimeout(startTime, 500);
-                        }
+                        }());
 
                         function checkTime(i) {
                             if (i < 10) {

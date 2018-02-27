@@ -6,6 +6,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using Data;
+    using Microsoft.AspNetCore.Http;
     using Microsoft.Extensions.Caching.Memory;
     using Models.ContractModels;
     using Nethereum.Contracts;
@@ -24,9 +25,9 @@
         private readonly string _contractName;
         private readonly Account _account;
 
-        public EventService(IMemoryCache cache, string node, string contractName)
+        public EventService(string privateKey, string node, string contractName)
         {
-            this._account = new Account(cache.Get<string>("PK"));
+            this._account = new Account(privateKey);
             this._web3 = new Web3(_account, node);
             this._contractName = contractName;
         }
