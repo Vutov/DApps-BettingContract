@@ -7,6 +7,7 @@
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Models.DbModels;
@@ -19,12 +20,14 @@
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
         private readonly ILogger _logger;
+        private readonly IMemoryCache _cache;
 
         public AccountController(IServiceProvider serviceProvider) : base(serviceProvider)
         {
             _userManager = this.ServiceProvider.GetService<UserManager<User>>();
             _signInManager = this.ServiceProvider.GetService<SignInManager<User>>();
             _logger = this.ServiceProvider.GetService<ILogger<AccountController>>();
+            _cache = this.ServiceProvider.GetService<IMemoryCache>();
         }
 
         [HttpGet]
@@ -48,6 +51,7 @@
             var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, isPersistent: false, lockoutOnFailure: false);
             if (result.Succeeded)
             {
+                _cache.Set("PK", model.Key);
                 _logger.LogInformation("User logged in.");
                 return this.RedirectToLocal(returnUrl);
             }

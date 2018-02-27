@@ -1,12 +1,19 @@
-﻿@{
+﻿@using Admin.Services
+@inject EventService Service
+@{
     ViewBag.Title = "Create Event";
     Layout = "_Layout";
 }
 
 <h2>Create Event</h2>
-
 <div class="row">
-    @using (Html.BeginForm("Create", "Event", new { }, FormMethod.Post, true, new { @Class = "form" }))
+    @{
+        var address = Service.GetSender();
+    }
+    <div id="message" class='alert alert-success d-none'>Contract is been deployed. You can check the status of the transaction - <a href='https://ropsten.etherscan.io/address/@address'>@address</a></div>
+</div>
+<div class="row">
+    @using (Html.BeginForm("Create", "Event", new { }, FormMethod.Post, true, new { @id = "form" }))
     {
         <div class="form-group">
             <label for="HomeTeamName">Home team name:</label>
@@ -16,6 +23,16 @@
             <label for="AwayTeamName">Away team name:</label>
             @Html.TextBox("AwayTeamName", "", null, new { @class = "form-control", name = "AwayTeamName" })
         </div>
-        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="button" class="btn btn-primary" onclick="showMessage.call(this)">Save</button>
     }
 </div>
+
+<script>
+    function showMessage() {
+        $(this).addClass('disabled');
+        this.setAttribute('disabled', 'disabled');
+        $('#message').removeClass('d-none');
+        var form = document.getElementById("form");
+        form.submit();
+    }
+</script>

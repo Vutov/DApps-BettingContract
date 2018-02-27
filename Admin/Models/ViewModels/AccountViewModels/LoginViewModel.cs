@@ -11,5 +11,8 @@
         [Required]
         [DataType(DataType.Password)]
         public string Password { get; set; }
+
+        [Required]
+        public string Key { get; set; }
     }
 }

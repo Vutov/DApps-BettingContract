@@ -56,7 +56,7 @@ contract SingleBet {
         homeTeamName = _homeTeamName;
         awayTeamName = _awayTeamName;
         isOpen = true;
-        expiration = now + 1 minutes; //+ 1 weeks; For demo purposes commented out
+        expiration = now + 5 minutes; //+ 1 weeks; For demo purposes commented out
     }
 
     function getBetMetaInfo() public view returns(bool, string, string, uint) {
@@ -144,7 +144,7 @@ contract SingleBet {
 
     function getWinnings() isSettled public view returns(uint) {
         uint initialBet = bets[winner][msg.sender];
-        if (initialBet == 0) {
+        if (initialBet == 0 || payedCustomers[msg.sender] == true) {
             return 0;
         }
 

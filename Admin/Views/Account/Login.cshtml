@@ -24,6 +24,11 @@
                     <span asp-validation-for="Password" class="text-danger"></span>
                 </div>
                 <div class="form-group">
+                    <label asp-for="Key"></label>
+                    <input asp-for="Key" class="form-control" />
+                    <span asp-validation-for="Key" class="text-danger"></span>
+                </div>
+                <div class="form-group">
                     <button type="submit" class="btn btn-default">Log in</button>
                 </div>
             </form>

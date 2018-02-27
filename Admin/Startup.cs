@@ -6,6 +6,7 @@
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Models.DbModels;
@@ -34,8 +35,7 @@
             services.AddMvc();
 
             //services.AddTransient(e => new EventService("http://localhost:8545/", "SingleBet"));
-            // /PGhw7kPw6Wf619UFjZ1M
-            services.AddTransient(e => new EventService("https://ropsten.infura.io/PGhw7kPw6Wf619UFjZ1M", "SingleBet"));
+            services.AddTransient(e => new EventService(e.GetService<IMemoryCache>(), "https://ropsten.infura.io/PGhw7kPw6Wf619UFjZ1M", "SingleBet"));
         }
         
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)

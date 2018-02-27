@@ -110,23 +110,16 @@
             {
                 _logger.LogCritical($"SettleBet failed {settled.GetListMessages()}");
                 this.ViewBag.ErrorMessage = "Settlement failed";
-            }
-
-            var info = _eventService.GetEventInfo(model.Address);
-            if (info.Success == false)
-            {
-                this.ViewBag.ErrorMessage = "Getting event info failed";
-                _logger.LogCritical($"GetEventInfo failed {info.GetListMessages()}");
                 return this.View("ViewAll", new EventsViewModel()
                 {
                     Events = this.DbContext.Events.OrderByDescending(e => e.ID).ToList()
                 });
             }
-
+            
             var evnt = this.DbContext.Events.FirstOrDefault(e => e.Address == model.Address);
             if (evnt != null)
             {
-                evnt.IsOpen = info.Value.IsOpen;
+                evnt.IsOpen = false;
                 this.DbContext.Events.Update(evnt);
                 this.DbContext.SaveChanges();
             }

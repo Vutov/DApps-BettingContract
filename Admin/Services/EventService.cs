@@ -2,11 +2,11 @@
 {
     using System;
     using System.IO;
-    using System.Linq;
     using System.Numerics;
     using System.Threading;
     using System.Threading.Tasks;
     using Data;
+    using Microsoft.Extensions.Caching.Memory;
     using Models.ContractModels;
     using Nethereum.Contracts;
     using Nethereum.Hex.HexTypes;
@@ -22,11 +22,12 @@
 
         private readonly Web3 _web3;
         private readonly string _contractName;
+        private readonly Account _account;
 
-        public EventService(string node, string contractName)
+        public EventService(IMemoryCache cache, string node, string contractName)
         {
-            var privateKey = "";
-            this._web3 = new Web3(new Account(privateKey),node);
+            this._account = new Account(cache.Get<string>("PK"));
+            this._web3 = new Web3(_account, node);
             this._contractName = contractName;
         }
 
@@ -35,7 +36,7 @@
             return this.Exec(async () =>
             {
                 var contract = this.GetContractDefinition();
-                var senderAddress = await this.UnlockAccount();
+                var senderAddress = _account.Address;
                 var transactionHash = await this._web3.Eth.DeployContract.SendRequestAsync(contract.GetAbi(), contract.ByteCode, senderAddress, _defaultGas, prms);
 
                 var receipt = await _web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transactionHash);
@@ -77,7 +78,7 @@
         {
             return this.Exec(async () =>
             {
-                var senderAddress = await this.UnlockAccount();
+                var senderAddress = _account.Address;
                 var contract = this.GetContract(address);
                 await contract.GetFunction("settleBet").SendTransactionAsync(senderAddress, _defaultGas, _zero, winner);
             });
@@ -87,7 +88,7 @@
         {
             return this.Exec(async () =>
             {
-                var senderAddress = await this.UnlockAccount();
+                var senderAddress = _account.Address;
                 var contract = this.GetContract(address);
                 await contract.GetFunction("destroyExpiredEvent").SendTransactionAsync(senderAddress, _defaultGas, _zero);
             });
@@ -95,8 +96,7 @@
 
         public string GetSender()
         {
-            var address = File.ReadAllLines("../address.txt").First();
-            return address;
+            return _account.Address;
         }
 
         public string GetAbi()
@@ -104,16 +104,7 @@
             var def = this.GetContractDefinition();
             return def.GetAbi();
         }
-
-        private async Task<string> UnlockAccount()
-        {
-            var address = this.GetSender();
-
-            // TODO bug in ganache-core dont allow unlocking of accounts - fixed in 2.1.0
-            //await _web3.Personal.UnlockAccount.SendRequestAsync(address, "12345678", new HexBigInteger(120));
-            return address;
-        }
-
+        
         private Contract GetContract(string address)
         {
             var info = this.GetContractDefinition();

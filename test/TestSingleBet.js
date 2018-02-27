@@ -726,5 +726,27 @@ contract('SingleBet', function (accounts) {
       // 3.39966 + 2 = 5.39966
       assert.equal(web3.toWei(5.39966, 'gwei'), result.toString())
     });
+
+    it("should return 0 when already collected", async function () {
+      let acc = accounts[3];
+      await instance.bet(1, {
+        from: acc,
+        value: web3.toWei(2, 'gwei')
+      })
+      await instance.settleBet(1, {
+        from: initialParams._oracle
+      });
+      await instance.collectWinnigs({
+        from: acc
+      });
+
+      // act
+      let result = await instance.getWinnings({
+        from: acc
+      });
+
+      // assert
+      assert.equal('0', result.toString())
+    });
   });
 });

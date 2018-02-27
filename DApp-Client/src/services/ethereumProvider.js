@@ -19,7 +19,10 @@ function exec(address, funcName, params, callback) {
         let contract = web3.eth.contract(abi).at(address);
         contract[funcName](...params, function (err, result) {
             if (err) {
-                observer.showError(error + err.message);
+                var myRegexp = /(.+)\s*at.+/g;
+                var match = myRegexp.exec(err.message);
+                let message = match[1] || err.message;
+                observer.showError(error + message);
                 return;
             }
 
