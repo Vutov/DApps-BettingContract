@@ -44,12 +44,13 @@
             });
 
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            //services.AddTransient(e => new EventService("http://localhost:8545/", "SingleBet"));
+            services.AddTransient(e => new ContractService("SingleBet"));
             services.AddTransient(e =>
             {
                 var context = e.GetService<IHttpContextAccessor>();
                 var privateKey = context.HttpContext.Session.GetString("PK");
-                return new EventService(privateKey, "https://ropsten.infura.io/PGhw7kPw6Wf619UFjZ1M", "SingleBet");
+                var contractService = e.GetService<ContractService>();
+                return new EventService(privateKey, "https://ropsten.infura.io/PGhw7kPw6Wf619UFjZ1M", contractService);
             });
         }
 

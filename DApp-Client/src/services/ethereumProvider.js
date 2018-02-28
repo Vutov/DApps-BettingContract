@@ -5,11 +5,17 @@ import { ISelectable } from '../components/common/common.models';
 
 
 const metaMaskError = "Please install MetaMask.";
+const accountError = "Please unlock your MetaMask account.";
 const error = "Smart contract call failed. ";
 
 function exec(address, funcName, params, callback) {
     if (typeof web3 === 'undefined') {
         observer.showError(metaMaskError);
+        return;
+    }
+
+    if(web3.eth.accounts.length == 0) {
+        observer.showError(accountError);
         return;
     }
 
@@ -36,6 +42,11 @@ function transaction(address, funcName, value, params, callback) {
         observer.showError(metaMaskError);
         return;
     }
+    
+    if(web3.eth.accounts.length == 0) {
+        observer.showError(accountError);
+        return;
+    }
 
     params = params || [];
 
@@ -59,6 +70,11 @@ function transaction(address, funcName, value, params, callback) {
 function getAddress() {
     if (typeof web3 === 'undefined') {
         observer.showError(metaMaskError);
+        return;
+    }
+
+    if(web3.eth.accounts.length == 0) {
+        observer.showError(accountError);
         return;
     }
 

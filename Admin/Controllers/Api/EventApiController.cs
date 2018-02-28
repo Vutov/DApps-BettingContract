@@ -35,8 +35,8 @@
         [Route("abi")]
         public IActionResult GetAbi()
         {
-            var service = this.ServiceProvider.GetService<EventService>();
-            return this.Ok(service.GetAbi());
+            var service = this.ServiceProvider.GetService<ContractService>();
+            return this.Ok(service.GetContractDefinition().GetAbi());
         }
 
         [HttpPost]

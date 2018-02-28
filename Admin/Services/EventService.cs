@@ -1,20 +1,16 @@
 ﻿namespace Admin.Services
 {
     using System;
-    using System.IO;
     using System.Numerics;
     using System.Threading;
     using System.Threading.Tasks;
     using Data;
-    using Microsoft.AspNetCore.Http;
-    using Microsoft.Extensions.Caching.Memory;
     using Models.ContractModels;
     using Nethereum.Contracts;
     using Nethereum.Hex.HexTypes;
     using Nethereum.Util;
     using Nethereum.Web3;
     using Nethereum.Web3.Accounts;
-    using Newtonsoft.Json;
     
     public class EventService
     {
@@ -22,21 +18,21 @@
         private readonly HexBigInteger _zero = new HexBigInteger(0);
 
         private readonly Web3 _web3;
-        private readonly string _contractName;
         private readonly Account _account;
+        private ContractService _contractService;
 
-        public EventService(string privateKey, string node, string contractName)
+        public EventService(string privateKey, string node, ContractService contractService)
         {
             this._account = new Account(privateKey);
             this._web3 = new Web3(_account, node);
-            this._contractName = contractName;
+            this._contractService = contractService;
         }
 
         public Result<string> Deploy(params object[] prms)
         {
             return this.Exec(async () =>
             {
-                var contract = this.GetContractDefinition();
+                var contract = _contractService.GetContractDefinition();
                 var senderAddress = _account.Address;
                 var transactionHash = await this._web3.Eth.DeployContract.SendRequestAsync(contract.GetAbi(), contract.ByteCode, senderAddress, _defaultGas, prms);
 
@@ -99,27 +95,15 @@
         {
             return _account.Address;
         }
-
-        public string GetAbi()
-        {
-            var def = this.GetContractDefinition();
-            return def.GetAbi();
-        }
         
         private Contract GetContract(string address)
         {
-            var info = this.GetContractDefinition();
+            var info = _contractService.GetContractDefinition();
             var contract = _web3.Eth.GetContract(info.GetAbi(), address);
 
             return contract;
         }
-
-        private ContractMetaInfo GetContractDefinition()
-        {
-            var json = File.ReadAllText($"../build/contracts/{_contractName}.json");
-            return JsonConvert.DeserializeObject<ContractMetaInfo>(json);
-        }
-
+        
         private Result Exec(Func<Task> func)
         {
             try
