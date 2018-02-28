@@ -1,6 +1,6 @@
 import * as $ from "jquery";
 
-const apiUrl = "http://localhost:64512/api/";
+const apiUrl = "https://dappadmin.azurewebsites.net/api/";
 
 function makeAuth(type) {
     switch (type) {

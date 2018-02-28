@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "webpack-dev-server --inline",
-    "build": "webpack"
+    "build": "webpack -w"
   },
   "author": "Spas Vutov",
   "license": "MIT",

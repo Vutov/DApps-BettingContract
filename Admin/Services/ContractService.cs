@@ -15,7 +15,7 @@
 
         public ContractMetaInfo GetContractDefinition()
         {
-            var json = File.ReadAllText($"../build/contracts/{_contractName}.json");
+            var json = File.ReadAllText($"./ContractDefinitions/{_contractName}.json");
             return JsonConvert.DeserializeObject<ContractMetaInfo>(json);
         }
     }
